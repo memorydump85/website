@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+
+terrafirma1.0 by nodethirtythree design
+http://www.nodethirtythree.com
+
+-->
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+        <title>Pradeep Ranganathan's profile</title>
+        <meta name="keywords" content="" />
+        <meta name="description" content="" />
+        <link rel="stylesheet" type="text/css" href="clean.css" />
+    </head>
+    <body>
+        <div id="outer">
+            <div id="upbg"></div>
+
+            <div id="inner">
+                <div id="header">
+                    <h1><span>Pradeep Ranganathan</span></h1>
+                </div>
+
+                <div id="splash"></div>
+
+                <div id="menu">
+                    <ul>
+                        <li><a href="index.html">About Me</a></li>
+                        <li><a href="index.html#_CURRENT_">Current Research</a></li>
+                        <li><a href="#_PAST_">My Past</a></li>
+                        <li><a href="#_CONTACT_">Contact</a></li>
+                    </ul>
+
+                    <div id="date">September 28, 2008</div>
+                </div>
+
+
+                <div id="primarycontent">
+                <!-- primary content start -->
+                
+                    <div class="post">
+                        <div class="header">
+                            <a id="_CTRLSYS_"></a>
+                            <h3>Tuning a reduced order control system using genetic algorithms</h3>
+                        </div>
+                        <div class="content">
+                            <img src="images/matlab.png" class="floatleft" alt="" />                            
+                            <p>My professor's work involved the analysis of a higher order control system transfer
+                            function by first reducing the order of the control system transfer function and then studying
+                            the properties of the reduced order transfer function. His approach was to first find an
+                            approximation to the higher order transfer function by iteratively averaging the coefficients
+                            in the higher order function until the order of the function was reduced. We would then tune
+                            the approximation found using genetic algorithms.</p>
+
+                            <p>The results were promising. The genetic algorithm was able to tune the parameters of the
+                            reduced order transfer function to approximate the original transfer function better. We tried
+                            using two different representations for the individuals in the population: a binary fixed point
+                            representation (vector of bits) that used a vector crossover and a floating point representation
+                            that used an averaging crossover. The bit-vector representation produced better approximations,
+                            though the floating point representation tended to produce damped versions of the transfer function
+                            making it interesting in its own way.
+                            </p>
+
+                            <p>As an example, let us consider reducing the order of the following transfer function:<br/><br/>
+                            <tt>&nbsp;35s<sup>7</sup> + 1086s<sup>6</sup> + 13285s<sup>5</sup> + 82402s<sup>4</sup><br/>
+                                &nbsp;&nbsp;&nbsp;&nbsp;+ 278376s<sup>3</sup> + 511812s<sup>2</sup> + 482964s + 194480<br/>
+                                --------------------------------------------<br/>
+                                &nbsp;s<sup>8</sup> + 21s<sup>7</sup> + 220s<sup>6</sup> + 1558s<sup>5</sup> + 7669s<sup>4</sup><br/>
+                                &nbsp;&nbsp;&nbsp;&nbsp;+ 24469s<sup>3</sup> + 46350 s^2 + 45952 s + 17760</tt><br/><br/>
+
+                            <img src="images/bitvector.png" style="float: right" alt="" />This is the approximation obtained
+                            by the GA employing a bit-vector representation (original transfer function in red and
+                            approximation in blue):<br/><br/>
+                            <tt>&nbsp;35s + 380.7<br/>
+                                ---------------------<br/>
+                                &nbsp;s<sup>2</sup> + 1.694s + 34.77<br/><br/>
+                            </tt>
+
+                            <img src="images/floatingpoint.png" style="float: right" alt="" />This is the approximation
+                            obtained by the GA employing a floating point representation:<br/><br/>
+                            <tt>&nbsp;35s + 24.67<br/>
+                                ---------------------<br/>
+                                &nbsp;s<sup>2</sup> + 4.215s + 2.253<br/><br/><br/>
+                            </tt>
+                            </p>
+
+                            <p>Later we realized empirically that the surface of the error function tended to be unimodal
+                            or have a single ridge. So we tried using a greedy hill climbing approach to optimize the
+                            parameters of the reduced order control system. But we realized that the solutions obtained
+                            required prior knowledge of the profile of the error surface and were dependent on the
+                            parameters used for the algorithm. As a result this approach was not as robust as using genetic
+                            algorithms.
+                            </p>                            
+                        </div>
+                        <div class="footer">
+                            <ul>
+                                <li class="readmore"><a href="docs/ctrlsys.zip">Source code (MATLAB)</a></li>
+                            </ul>
+                        </div>                       
+                    </div>
+
+                <!-- primary content end -->
+                </div>
+
+                <div id="footer">
+                    &copy; Pradeep Ranganathan. All rights reserved. Best when viewed with <a href="http://www.mozilla.com/firefox/">
+                    Mozilla FireFox</a>. Design by <a href="http://www.nodethirtythree.com/">NodeThirtyThree</a>.
+                </div>
+
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+
+terrafirma1.0 by nodethirtythree design
+http://www.nodethirtythree.com
+
+-->
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+        <title>Pradeep Ranganathan's profile</title>
+        <meta name="keywords" content="" />
+        <meta name="description" content="" />
+        <link rel="stylesheet" type="text/css" href="clean.css" />
+    </head>
+    <body>
+        <div id="outer">
+            <div id="upbg"></div>
+
+            <div id="inner">
+                <div id="header">
+                    <h1><span>Pradeep Ranganathan</span></h1>
+                </div>
+
+                <div id="splash"></div>
+
+                <div id="menu">
+                    <ul>
+                        <li><a href="index.html">About Me</a></li>
+                        <li><a href="index.html#_CURRENT_">Current Research</a></li>
+                        <li><a href="#_PAST_">My Past</a></li>
+                        <li><a href="#_CONTACT_">Contact</a></li>
+                    </ul>
+
+                    <div id="date">September 28, 2008</div>
+                </div>
+
+
+                <div id="primarycontent">
+                <!-- primary content start -->
+                
+                        <div class="post">
+                            <div class="header">
+                                <a id="_HBPRJ_"></a>
+                                <h3>Using machine intelligence to organize mail</h3>
+                            </div>
+                            <div class="content">
+                            <img src="images/mailitem-big.png" class="floatleft" alt="" />
+                            <p>Properly organized mail can have a positive impact on awareness about issues related to work.
+                            Often, it is about reading a single message in a nested inbox folder that can make the difference. Sometimes
+                            I am so involved in my current work that I do not pay attention to a lot of mail. So I was thinking of a way
+                            to organize my mail, so that I can tell at a glance which mail to read first.</p>
+                            
+                            <p>Often, a well organized inbox is the result of multiple overlapping rules to sort mails into folders.
+                            But there are criteria that can cut across this organization of mail into folders. For example, mail sent
+                            directly to me is always important; mail from my manager and mail about my current product is mostly
+                            important.</p>
+
+                            <p>I happened to read about the use of bayesian inference and naive bayes classifiers to classify spam.
+                            Being faced with this issue of efficiently organizing my mailbox at work, I set out to try organizing my
+                            inbox using bayesian inference. Since I use Microsoft Outlook as my mail client, I wrote an addin that would
+                            hook into the new mail event of the Outlook object model and classify mail as it arrived.</p>
+                            
+                            <p>The addin (created using Visual Studio Tools for Office) first learns a classification model on startup.
+                            It goes through mail for the past two months and learns features about the mail items I read and the mail
+                            items I leave unread. (I have this habit of leaving unread mail. Some people have the habit of marking stale
+                            mail as read at regular intervals. So this way of learning features would not work for them. Anyways, this is
+                            a deficiency of the mail client, not the method itself, since the client can mark mail that was bulk marked
+                            as read differently).</p>
+                            
+                            <p>This model of read and unread features is updated every half an hour during the day. Incoming mail is
+                            queued and classified on a background thread. Mail that is predicted as "would be read"
+                            is marked under a category. During night, only classification happens. This is because learning data during
+                            the night would make wrong assumptions as most delivered mail would be left unread till morning.
+                            For purposes of learning the model, sent mail is considered mail that has been read.</p>
+
+                            <p>One thing to note about the organization of my mailbox is its division into two broad categories: A
+                            set of folders that is about my immediate work (Inbox) and another set of folders that contains mails from
+                            large generic distribution lists (Lists). Learning happens from content in my Inbox only. However
+                            classification is applied to all incoming mail. This way, I intend to classify mail sent to distribution
+                            lists based on its relation to my work.</p>
+
+                            <p>
+                            The addin creates three search folders:<br/>
+                            <img src="images/favscrnshot.png" alt="" style="padding: 8px; float: right; margin: 0px 0px 0px 12px; top: -4px" />
+                            &nbsp;&nbsp;1. Mail with me on To or Cc<br/>
+                            &nbsp;&nbsp;2. Mail in inbox marked "Important"<br/>
+                            &nbsp;&nbsp;3. Mail categorized by the addin.<br/><br/>
+
+                            These search folders are designed to filter mail I should read first. Incoming mail is flagged by the addin
+                            and is available under the <em>Unread Mail Assistant</em> folder. Bayesian inference performs reasonably well
+                            at predicting whether I would read a particular piece of incoming mail. Though I have not tried to quantify
+                            this efficiency, I have noticed that most classified mail are those that I should read (with one
+                            small exception. I happen to subscribe to a distribution list that is very generic and mostly unrelated to
+                            work. So classification of mails sent to this list is rather unsatisfactory). There have been a few cases
+                            where see some mail item that I would like to have read, but was not classified as <em>Good to Read</em> when
+                            it arrived. But many times this addin has brought to my notice mail items that I would have otherwise
+                            missed.
+                            <div align="center">
+                                <img src="images/searchfolder.png" alt="" />
+                            </div></p>
+                            <p>A specific example of how mail gets classified can be found <a href="#_CLASSIFY_EXAMPLE_">below</a>.</p>
+
+                            <br/>
+                            <p><b><u>Detailed Implementation</u></b></p>
+
+                            <p>Given a set of features, inference predicts the class as the classification that has the highest score:
+                            <div align="center">
+                                <img src="images/bc-eqn1.png" alt="" />
+                            </div></p>
+
+                            <p>If we assume naive bayesian inference, the above equation can be decomposed as
+                            <div align="center">
+                                <img src="images/bc-eqn2.png" alt="" />
+                            </div></p>
+
+                           <p>The term <em>P(C<sub>v</sub>)</em> biases the prediction based on the ratio of read mail to unread
+                            mail. In other words, this term aids the following kind of inference: given a mail item, without looking at its
+                            features one can say it will probably be unread because 70% of mail in the inbox is unread. Empirically it was
+                            noticed that this bias unnecessarily skews predictions. Hence we remove this bias. Mathematically this
+                            translates to assuming <em>P(C=Read) = P(C=Unread) = 0.5</em>. We also transform the equation to use logarithms
+                            for better floating point accuracy. The equation now becomes:
+                            <div align="center">
+                                <img src="images/bc-eqn3.png" alt="" />
+                            </div></p>
+
+                            <p>One more empirical observation is the effect of dependence between features. A mail containing
+                            <em>keyword-1 keyword-2 keyword-3</em> has a noticeably different probability of being read than the
+                            probability calculated by the product of the probability of being read given the occurrence of
+                            <em>keyword-1</em>, <em>keyword-2</em> and <em>keyword-3</em> separately. This exact calculation of the
+                            probability of dependent features aids better prediction. The equation needs to be modified to take into 
+                            account dependent features. In the above equation if features <em>f<sub>1</sub></em> and
+                            <em>f<sub>2</sub></em> are dependent the equation is transformed to:
+                            <div align="center">
+                                <img src="images/bc-eqn4.png" alt="" />
+                            </div></p>                            
+
+                            <p>In effect the final equation represents a part joint bayes and part naive bayes classifier without inherent
+                            bias.</p>
+
+                           <p>In the implementation, the probabilities required for prediction are obtained by first indexing the data and
+                            then querying for count of mail items that match a certain criteria. The model used for classification
+                            consists of four indices:</p>
+
+                           <p>&nbsp;&nbsp;1. An index of senders in read mail items.<br/>
+                            &nbsp;&nbsp;2. An index of senders in unread mail items.<br/>
+                            &nbsp;&nbsp;3. An index of words in read mail items.<br/>
+                            &nbsp;&nbsp;4. An index of sender in unread mail items.<br/></p>
+
+                            <p>Indices (1) and (2) are used to calculate the probability that the item is sent by a person when assumed it
+                            is read, unread respectively. Indices (2) and (3) are created as inverted lists. These are used to calculate
+                            the probability of occurrence of a word/group of words when the mail item is assumed to be read, unread
+                            respectively.</p>
+
+                            <p>The model is created when the Outlook mail client is launched. This model creation happens in a low
+                            priority background thread so as not to block the user. Mail items that arrive during model creation are queued
+                            for classification and they are classified after the model has been built. The model is updated in the
+                            background every half an hour (again in a background thread). This is done to take into account recent mail
+                            that was read/left unread. When subject lines are indexed, they are normalized and each word is stemmed using
+                            the <a href="http://tartarus.org/~martin/PorterStemmer/">Porter stemmer</a>.</p>
+                            
+                            <p>One added advantage of calculating the probability of dependent features explicitly is
+                            that replies to a mail that was read has a high chance of being classified as <em>Must Read</em>. As an
+                            example, when I send a mail to a distribution list, the mail will first be added to the sent items folder. When
+                            the model is updated, the mail item will be learnt and indexed in the read indices. As a result, when someone
+                            replies to the mail, the reply has a high chance of being classified as <em>Must Read</em> because the exact
+                            combination of words in it subject has already been classified as read.</p>
+
+                            <p><a id="_CLASSIFY_EXAMPLE_"></a>
+                            As a specific example, consider two new mail items with subject lines <em>"office mobile status for week
+                            36"</em> and <em>"office mobile team priorities"</em>. The first mail is classified using
+                            <em>"office mobile status for week"</em> and <em>"36"</em> as features since <em>"office mobile status for week"
+                            </em> would have already appeared a few times in my inbox. However the second mail item will be
+                            classified using <em>"office mobile"</em>, <em>"team"</em> and <em>"priorities"</em> as
+                            separate features. Hence the prediction system specializes when possible and generalizes when there is not
+                            enough specific data.</p>
+
+                            <p>My mail box contains around 7500 mail items that are two months old or newer. This number is probably not
+                            sufficient to learn a good generalizing classifier using naive bayesian classification alone. Hence this
+                            approach tries to combine naive and joint bayesian inference to overcome the lack of sufficient data</p>
+
+                            <p>The approach of hooking in to the new mail event does not scale too well because the event is not
+                            fired when more than 16 mail items are delivered at a time (this happens when one syncs after a momentary
+                            loss of connectivity). Ideally this classification should be done on the mail server (Microsoft Exchange
+                            Server). Nevertheless, this way of hooking into the new mail event is quite sufficient since my machine at
+                            work runs Outlook client 24x7 and it is always connected to the corpnet/internet.</p>
+
+                            <br/>
+                            <p><b><u>Future directions</u></b></p>
+                            <p>1. I will need to try using the <em>multinomial event model</em> instead of the <em>multivariate Bernoulli
+                                event model</em>. This model is reported to produce better results (I learnt this from
+                            <a href="http://see.stanford.edu/see/lecturelist.aspx?coll=348ca38a-3a6d-4052-937d-cb017338d7b1">
+                                Andrew Ng's lectures</a>).</p>
+
+                            <p>(I will be happy to send across the source code if you <a href="#_CONTACT_">send me a mail</a>).</p>
+                        </div>
+
+                        <div class="footer">
+                            <ul>
+                                <li class="readmore"><a href="http://www.autonlab.org/tutorials/naive.html">Lecture on Bayesian Inference</a></li>
+                                <li class="readmore"><a href="http://see.stanford.edu/see/lecturelist.aspx?coll=348ca38a-3a6d-4052-937d-cb017338d7b1">
+                                Andrew Ng's lectures</a></li>                                
+                            </ul>
+                        </div>
+                    </div>
+                
+                <!-- primary content end -->
+                </div>
+
+                <div id="footer">
+                    &copy; Pradeep Ranganathan. All rights reserved. Best when viewed with <a href="http://www.mozilla.com/firefox/">
+                    Mozilla FireFox</a>. Design by <a href="http://www.nodethirtythree.com/">NodeThirtyThree</a>.
+                </div>
+
+            </div>
+        </div>
+    </body>
+</html>
