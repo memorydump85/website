@@ -29,7 +29,7 @@ for root, dirs, files in os.walk(rootPath):
             # generate thumbnails and links
             absFileName = os.path.join(root, filename)
             print absFileName
-            os.system('sudo cp -l ' + absFileName + ' images/' + filename)
+            os.system('sudo convert ' + absFileName + ' -resize 5% images/' + filename)
             os.system('sudo convert ' + absFileName + ' -resize 5% thumbs/' + filename)
             
             #generate xml content
