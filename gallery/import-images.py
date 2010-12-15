@@ -5,16 +5,18 @@ import os
 
 print 'Purging existing images ...'
 os.system('sudo rm -f images/*')
-os.system('sudo rm -f imagethumbs/*')
+os.system('sudo rm -f thumbs/*')
+os.system('sudo mkdir images')
+os.system('sudo mkdir thumbs')
 
 rootPath = '/home/rpradeep/Pictures/Photos'
 pattern = '*.JPG'
 
 XML = open('gallery.xml', 'w');
 
-XML.write( '<simpleviewerGallery maxImageHeight="1024" maxImageWidth="1024" \
+XML.write( '<simpleviewerGallery maxImageHeight="2048" maxImageWidth="2048" \
 textColor="0xFFFFFF" frameColor="0xffffff" frameWidth="20" stagePadding="40" \
-thumbnailColumns="3" thumbnailRows="3" navPosition="left" title="Madeira" \
+thumbnailColumns="2" thumbnailRows="5" navPosition="left" title="Winter 2010" \
 enableRightClickOpen="true" backgroundImagePath="" thumbPath="thumbs/" \
 imagePath="images/" >\n' )
 
@@ -29,12 +31,13 @@ for root, dirs, files in os.walk(rootPath):
             # generate thumbnails and links
             absFileName = os.path.join(root, filename)
             print absFileName
-            os.system('sudo convert ' + absFileName + ' -resize 5% images/' + filename)
-            os.system('sudo convert ' + absFileName + ' -resize 5% thumbs/' + filename)
+            os.system('sudo convert ' + absFileName + ' -auto-orient -resize x600 images/' + filename)
+            os.system('sudo convert ' + absFileName + ' -auto-orient -resize x80 thumbs/' + filename)
             
             #generate xml content
             XML.write( '<image>\n' )
             XML.write( '    <filename>' + filename + '</filename>\n' )
+            XML.write( '<caption> </caption>\n' )
             XML.write( '</image>\n')
 
 print 'Finished generating gallery.xml'
