@@ -12,10 +12,10 @@ pattern = '*.JPG'
 
 XML = open('gallery.xml', 'w');
 
-XML.write( '<simpleviewerGallery maxImageHeight="1024" maxImageWidth="1024"\
-textColor="0xFFFFFF" frameColor="0xffffff" frameWidth="20" stagePadding="40"\
-thumbnailColumns="3" thumbnailRows="3" navPosition="left" title="Madeira"\
-enableRightClickOpen="true" backgroundImagePath="" thumbPath="thumbs/"\
+XML.write( '<simpleviewerGallery maxImageHeight="1024" maxImageWidth="1024" \
+textColor="0xFFFFFF" frameColor="0xffffff" frameWidth="20" stagePadding="40" \
+thumbnailColumns="3" thumbnailRows="3" navPosition="left" title="Madeira" \
+enableRightClickOpen="true" backgroundImagePath="" thumbPath="thumbs/" \
 imagePath="images/" >\n' )
 
 
