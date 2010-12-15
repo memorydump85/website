@@ -19,7 +19,7 @@ for root, dirs, files in os.walk(rootPath):
         else:
             absFileName = os.path.join(root, filename)
             print absFileName
-            os.system('sudo convert ' + absFileName + ' -resize 40% images/' + filename)
+            os.system('sudo convert ' + absFileName + ' -resize 20% images/' + filename)
             os.system('sudo convert ' + absFileName + ' -resize 5% imagethumbs/' + filename)
 
 print 'Done'
