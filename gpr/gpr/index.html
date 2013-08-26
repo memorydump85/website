@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<title>Gaussian Process Regression - Pradeep Ranganathan</title>
+<meta name="keywords" content="Gaussian Process Regression" />
+<link rel="stylesheet" type="text/css" href="../clean.css" />
+<link href="jquery-ui-1.9.1.custom.min.css" rel="stylesheet" type="text/css"/>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+
+<style>
+svg {
+  font: 12px sans-serif;
+  fill: darkgray;
+  stroke: none;
+  background-color:#f9f9f7;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: darkgray;
+  shape-rendering: crispEdges;
+}
+
+.regressor {
+  fill: none;
+  stroke: black;
+  stroke-width: 1.5px;
+}
+
+.ubound {
+  fill: none;
+  stroke: gray;
+  stroke-width: 1px;
+}
+
+.lbound {
+  fill: none;
+  stroke: gray;
+  stroke-width: 1px;
+}
+
+.sample {
+  fill: none;
+  stroke: #ff6600;
+  stroke-width: 1px;
+}
+
+.dot {
+  fill: steelblue;
+  stroke: darkblue;
+  stroke-width: 1.5px;
+}
+
+.sliderLabel {
+  border: solid;
+  border-color: darkgray;
+  border-width: 1px;
+}
+
+#gpcanvas {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="outer">
+<div id="upbg"></div>
+
+<div id="inner">
+<div id="header">
+<h1><span>Pradeep Ranganathan</span></h1>
+</div>
+
+<div id="splash"></div>
+
+<div id="menu">
+    <div id="date">November 14, 2012</div>
+</div>
+
+<div id="primarycontent">
+
+<div class="post" align="center">
+<div class="header">
+    <h3>Gaussian process regression: a function space perspective</h3>
+</div>
+<div class="content">
+
+    <p>This page attempts an intuitive explanation of the function space
+perspective of Gaussian process (GP) regression. The webapp below demonstrates
+how a GP prior is a distribution over functions, and how observing data
+conditions the prior to obtain the GP posterior.</p>
+
+    <p>In the beginning there is just the Gaussian process (GP) prior, which is
+a vague specification of the function generating the data. You can see in the
+app below, samples from the GP prior (shown in orange) produce all sorts of
+random functions.</p>
+
+    <p>When a data-point is observed (click on the chart to add a data point),
+it conditions the values the GP can take at that point. Thus, observed
+data-points add information that constrains the distribution of functions. Vary
+the GP hyper-parameters to see how these affect the conditioning of the GP.
+When all the data has been observed, we are left with the posterior GP
+distribution over functions.</p>
+
+    <p><div id="gpcanvas"></div></p>
+    <table style="border: none; font: 12px sans-serif" width="640px" cellspacing="3px">
+    <tr>
+      <td width="170px">Prior function covariance</td>
+      <td width="40px" id="vf_val" class="sliderLabel"></td>
+      <td width="300px"><div id="slider_vf"></div></td>
+      <td rowspan="3"><button id="button_opt">Optimize</button></td>
+    </tr>
+    <tr>
+      <td width="170px">Characteristic length-scale</td>
+      <td width="40px" id="tau_val" class="sliderLabel"></td>
+      <td width="300px"><div id="slider_tau"></div></td>
+    </tr>
+    <tr>
+      <td width="170px">Input noise precision</td>
+      <td width="40px" id="beta_val" class="sliderLabel"></td>
+      <td width="300px"><div id="slider_beta"></div></td>
+    </tr>
+    </table>
+</div>
+<br/>
+<div class="footer">
+    <ul>
+    <li><a href="http://www.gaussianprocess.org/gpml/">Gaussian Processes for Machine Learning</a></li>
+    </ul>
+</div>
+</div>
+
+</div>
+
+<div id="footer">
+&copy; Pradeep Ranganathan. All rights reserved. Best when viewed with
+<a href="http://www.mozilla.com/firefox/">Mozilla FireFox</a>.
+Design by <a href="http://www.nodethirtythree.com/">NodeThirtyThree</a>.
+</div>
+
+</div>
+</div>
+
+</body>
+
+<script src="d3.v2.js"></script>
+<script src="numeric-1.2.3.min.js"></script>
+<script>
+
+var width = 640;
+var height = 480;
+
+var data = [];
+
+var x = d3.scale.linear()
+    .domain([-3, 3])
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .domain([-5, 5])
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom")
+    .ticks(7);
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left").
+    ticks(5);
+
+var line = d3.svg.line()
+        .x(function(d) { return x(d[0]); })
+        .y(function(d) { return y(d[1]); });
+
+var svg = d3.select("#gpcanvas").append("svg")
+    .on("click", click)
+    .datum(data)
+    .attr("width", width)
+    .attr("height", height)
+
+svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height/2 + ")")
+    .call(xAxis);
+
+svg.append("g")
+    .attr("class", "y axis")
+    .attr("transform", "translate(" + width/2 + ", 0)")
+    .call(yAxis);
+
+//-------------------------------------
+function click() {
+    var p = d3.mouse(this);
+    var a = [x.invert(p[0]), y.invert(p[1])];
+    data.push(a);
+    update();
+}
+
+//-------------------------------------
+
+var meanfn = [];
+var CpostSVD = [];
+
+function update() {
+    svg.selectAll(".dot")
+        .data(data)
+        .enter().append("circle")
+        .attr("class", "dot")
+        .attr("cx", line.x())
+        .attr("cy", line.y())
+        .attr("r", 3);
+    
+    /* Hyper-parameter values */
+    var vf = $("#slider_vf").slider("value");
+    var tau = $("#slider_tau").slider("value");
+    var BetaInv = 1.0 / $("#slider_beta").slider("value");
+
+    meanfn = [];
+    var conf_ubnd = [];
+    var conf_lbnd = [];
+
+    function kernel(a, b) {
+        var r = (a-b);
+        return vf*vf*numeric.exp(-0.5*(r*r)/(tau*tau));
+    }
+
+
+    if (data.length < 1) /* No data; just prior */ {
+        var q = d3.range(-3, 3.15, 0.05);
+        
+        meanfn = d3.zip(q, numeric.rep([q.length], 0));
+        
+        var std = numeric.sqrt(kernel(0,0) + BetaInv);
+        conf_ubnd = d3.zip(q, numeric.rep([q.length], std));
+        conf_lbnd = d3.zip(q, numeric.rep([q.length], -std));
+
+        var Cqq = numeric.identity(q.length);
+        for (var i=0; i<q.length; ++i) {
+            for (var j=0; j<q.length; ++j) {
+                Cqq[i][j] = kernel(q[i], q[j]);
+                if (i == j) {
+                    //Cqq[i][j] += BetaInv;
+                }
+            }
+        }
+
+        CpostSVD = numeric.svd(Cqq);
+
+    } else /* atleast one data point was specified */ {
+        var x_vals = [];
+        var t_vals = [];
+        for (var i=0; i<data.length; ++i) {
+            x_vals.push(data[i][0]);
+            t_vals.push(data[i][1]);
+        }
+
+        var Cn = numeric.identity(data.length);
+        for (var i=0; i<data.length; ++i) {
+            for (var j=0; j<data.length; ++j) {
+                Cn[i][j] = kernel(x_vals[i], x_vals[j]);
+                if (i == j) {
+                    Cn[i][j] += BetaInv;
+                }
+            }
+        }
+        
+        var q = d3.range(-3, 3.15, 0.05);
+
+        var Cqx = numeric.rep([q.length, x_vals.length], 0);
+        for (var i=0; i<q.length; ++i) {
+            for (var j=0; j<x_vals.length; ++j) {
+                Cqx[i][j] = kernel(q[i], x_vals[j]);
+            }
+        }
+
+        var Cxq = numeric.transpose(Cqx);
+
+        var Cqq = numeric.identity(q.length);
+        for (var i=0; i<q.length; ++i) {
+            for (var j=0; j<q.length; ++j) {
+                Cqq[i][j] = kernel(q[i], q[j]);
+                if (i == j) {
+                    Cqq[i][j] += BetaInv;
+                }
+            }
+        }
+
+        meanfn = numeric.dot(Cqx, numeric.solve(Cn, t_vals));
+        
+        var Cpost = numeric.sub(Cqq, numeric.dot(Cqx, numeric.dot(numeric.inv(Cn), Cxq)));
+        var conf = numeric.sqrt(numeric.getDiag(Cpost));
+        conf_ubnd = numeric.add(meanfn, conf);
+        conf_lbnd = numeric.sub(meanfn, conf);
+
+        /* make (x,y) points from result vectors */
+        meanfn = d3.zip(q, meanfn);
+        conf_ubnd = d3.zip(q, conf_ubnd);
+        conf_lbnd = d3.zip(q, conf_lbnd);
+
+        var binvI = numeric.diag(numeric.rep([Cpost.length], BetaInv));
+        CpostSVD = numeric.svd(numeric.sub(Cpost, binvI));
+    }
+
+    svg.selectAll(".regressor")
+        .data([meanfn])
+        .attr("d", line)
+	  .enter().append("path")
+        .attr("class", "regressor")
+	    .attr("d", line);
+
+    svg.selectAll(".ubound")
+        .data([conf_ubnd])
+        .attr("d", line)
+	  .enter().append("path")
+        .attr("class", "ubound")
+	    .attr("d", line);
+    
+    svg.selectAll(".lbound")
+        .data([conf_lbnd])
+        .attr("d", line)
+	  .enter().append("path")
+        .attr("class", "lbound")
+	    .attr("d", line);
+
+    updateSample();
+}
+
+function newSample() {
+    var q = d3.range(-3, 3.15, 0.05);
+    var m = d3.range(q.length)
+                .map( function(i) { return meanfn[i][1]; } );
+    var iid = d3.range(q.length)
+                .map( function(i) { return d3.random.normal()(); } );
+
+    var svd = CpostSVD;
+    var xform = numeric.dot(svd.U, numeric.diag(numeric.sqrt(svd.S)));
+    var corr = numeric.dot(xform, iid);
+
+    var samplefn = d3.zip(q, numeric.add(m, corr)); 
+
+    svg.selectAll(".sample")
+        .data([samplefn])
+        .attr("d", line)
+	  .enter().append("path")
+        .attr("class", "sample")
+	    .attr("d", line);
+
+    return false;
+}
+
+function updateSample() {
+    var q = d3.range(-3, 3.15, 0.05);
+    var m = d3.range(q.length)
+                .map( function(i) { return meanfn[i][1]; } );
+    var iid = d3.range(q.length)
+                .map( function(i) { return d3.random.normal()(); } );
+
+    var svd = CpostSVD;
+    var xform = numeric.dot(svd.U, numeric.diag(numeric.sqrt(svd.S)));
+    var corr = numeric.dot(xform, iid);
+
+    var samplefn = d3.zip(q, numeric.add(m, corr)); 
+
+    svg.selectAll(".sample")
+        .data([samplefn])
+      .transition()
+        .duration(100)
+        .attr("d", line)
+
+    return false;
+}
+
+</script>
+
+<script>
+  $(document).ready(function() {
+
+    $( "#slider_vf").slider({min: 0.1, max: 3, step: 0.01,
+        change: function(event, ui) {
+            d3.select("#vf_val").text(ui.value);
+            update();
+        },
+        slide: function(event, ui) {
+            d3.select("#vf_val").text(ui.value);
+        }
+    });
+    $("#slider_tau").slider({min: 0.1, max: 5,step: 0.01,
+        change: function(event, ui) {
+            d3.select("#tau_val").text(ui.value);
+            update();
+        },
+        slide: function(event, ui) {
+            d3.select("#tau_val").text(ui.value);
+        }
+    });
+    $("#slider_beta").slider({min: 0.1, max: 1000, step: 0.01,
+        change: function(event, ui) {
+            d3.select("#beta_val").text(ui.value);
+            update();
+        },
+        slide: function(event, ui) {
+            d3.select("#beta_val").text(ui.value);
+        }
+    });
+
+    $("#button_opt").button().click( function() {
+        var wsURL = "http://rpradeep.webhop.net:5464/optimize";
+        $.post(wsURL, data);
+        alert(JSON.stringify(data));
+    });
+
+    $("#slider_vf").slider("value", 1.5);
+    $("#slider_tau").slider("value", 0.5);
+    $("#slider_beta").slider("value", 100);
+
+    newSample();
+    window.setInterval(updateSample, 120);
+  });
+
+</script>
+
+</html>
